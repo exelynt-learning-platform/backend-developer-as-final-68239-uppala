@@ -23,6 +23,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -101,24 +103,33 @@ public class ReservationService {
                                                           ReservationStatus status,
                                                           BigDecimal minPrice,
                                                           BigDecimal maxPrice) {
-        return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        return (root, query, criteriaBuilder) -> criteriaBuilder.and(buildPredicates(
+                root, criteriaBuilder, userDetails, adminUser, status, minPrice, maxPrice));
+    }
 
-            if (!adminUser) {
-                predicates.add(cb.equal(root.get("user").get("id"), userDetails.getId()));
-            }
-            if (status != null) {
-                predicates.add(cb.equal(root.get("status"), status));
-            }
-            if (minPrice != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
-            }
-            if (maxPrice != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
-            }
+    private Predicate[] buildPredicates(Root<Reservation> root,
+                                        CriteriaBuilder criteriaBuilder,
+                                        UserDetailsImpl userDetails,
+                                        boolean adminUser,
+                                        ReservationStatus status,
+                                        BigDecimal minPrice,
+                                        BigDecimal maxPrice) {
+        List<Predicate> predicates = new ArrayList<>();
 
-            return cb.and(predicates.toArray(new Predicate[0]));
-        };
+        if (!adminUser) {
+            predicates.add(criteriaBuilder.equal(root.get("user").get("id"), userDetails.getId()));
+        }
+        if (status != null) {
+            predicates.add(criteriaBuilder.equal(root.get("status"), status));
+        }
+        if (minPrice != null) {
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
+        }
+        if (maxPrice != null) {
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
+        }
+
+        return predicates.toArray(new Predicate[0]);
     }
 
     public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,

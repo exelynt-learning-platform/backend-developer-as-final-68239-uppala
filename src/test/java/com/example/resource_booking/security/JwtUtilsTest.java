@@ -63,7 +63,8 @@ public class JwtUtilsTest {
     @Test
     void knownInsecureDefaultSecret_ThrowsClearConfigurationError() {
         JwtUtils insecureUtils = new JwtUtils();
-        ReflectionTestUtils.setField(insecureUtils, "jwtSecret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
+        ReflectionTestUtils.setField(insecureUtils, "jwtSecret",
+                "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
         ReflectionTestUtils.setField(insecureUtils, "jwtExpirationMs", expirationMs);
 
         User user = User.builder().id(2L).username("user").role(Role.USER).build();
