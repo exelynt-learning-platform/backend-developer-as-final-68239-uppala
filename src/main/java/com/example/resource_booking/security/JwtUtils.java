@@ -11,12 +11,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.security.MessageDigest;
 import java.util.Date;
 
 @Component
@@ -41,64 +38,25 @@ public class JwtUtils {
             throw missingSecretException();
         }
 
-        String secret = jwtSecret.trim();
-        Key hexKey = decodeHexKey(secret);
-        if (hexKey != null) {
-            return hexKey;
-        }
-
-        Key base64Key = decodeBase64Key(secret);
-        if (base64Key != null) {
-            return base64Key;
-        }
-
-        Key rawKey = deriveRawSecretKey(secret);
-        if (rawKey != null) {
-            return rawKey;
-        }
-
-        throw missingSecretException();
-    }
-
-    private Key decodeHexKey(String secret) {
-        if (!secret.matches("^[0-9a-fA-F]{64,}$")) {
-            return null;
-        }
         try {
-            return Keys.hmacShaKeyFor(Hex.decode(secret));
-        } catch (Exception e) {
-            logger.debug("Hex decode failed, falling back: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private Key decodeBase64Key(String secret) {
-        try {
-            byte[] base64Bytes = Decoders.BASE64.decode(secret);
-            return base64Bytes.length >= 32 ? Keys.hmacShaKeyFor(base64Bytes) : null;
-        } catch (Exception e) {
-            logger.debug("Base64 decode failed, falling back: {}", e.getMessage());
-            return null;
-        }
-    }
-
-    private Key deriveRawSecretKey(String secret) {
-        try {
-            byte[] rawBytes = secret.getBytes(StandardCharsets.UTF_8);
-            if (rawBytes.length >= 32) {
-                return Keys.hmacShaKeyFor(rawBytes);
+            byte[] secretBytes = Decoders.BASE64.decode(jwtSecret.trim());
+            if (secretBytes.length < 32) {
+                throw invalidSecretFormatException();
             }
-            byte[] hashed = MessageDigest.getInstance("SHA-256").digest(rawBytes);
-            return Keys.hmacShaKeyFor(hashed);
-        } catch (Exception e) {
-            logger.error("Error creating key from secret string: {}", e.getMessage());
-            return null;
+            return Keys.hmacShaKeyFor(secretBytes);
+        } catch (IllegalArgumentException ex) {
+            throw invalidSecretFormatException();
         }
     }
 
     private IllegalStateException missingSecretException() {
         return new IllegalStateException(
                 "JWT secret is required. Set JWT_SECRET to a stable secret of at least 32 bytes.");
+    }
+
+    private IllegalStateException invalidSecretFormatException() {
+        return new IllegalStateException(
+                "JWT secret must be a Base64-encoded key of at least 32 bytes.");
     }
 
     private Key key() {

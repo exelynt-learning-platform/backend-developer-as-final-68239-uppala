@@ -31,7 +31,7 @@ The application can be configured via environment variables or local configurati
 | `DB_URL` | JDBC Database Connection URL | `jdbc:mysql://localhost:3306/booking_db?createDatabaseIfNotExist=true` |
 | `DB_USERNAME` | Database username | *(Required; set securely via ENV)* |
 | `DB_PASSWORD` | Database password | *(Required; set securely via ENV)* |
-| `JWT_SECRET` | 256-bit Hex secret key for signing JWTs | *(Set securely via ENV)* |
+| `JWT_SECRET` | Base64-encoded signing key of at least 32 bytes | *(Required; set securely via ENV)* |
 | `JWT_EXPIRATION_MS`| JWT validity duration in milliseconds | `86400000` (24 Hours) |
 | `SERVER_PORT` | Application server port | `8081` |
 | `ADMIN_SEED_PASSWORD` | Initial password for the admin seed account | *(Required; set securely via ENV)* |
@@ -57,30 +57,14 @@ All endpoints other than login require a Bearer token. `USER` accounts can read 
 
 ## Setup & Running Locally
 
-### 1. Configure Environment Variables
-Set the required environment variables before starting the application:
-
-```bash
-# Database Credentials
-export DB_USERNAME=root
-export DB_PASSWORD=your_database_password
-
-# JWT Secret (minimum 32 bytes / 256 bits)
-export JWT_SECRET=your_unique_secure_jwt_secret_key_minimum_32_bytes
-
-# Initial Seed Credentials
-export ADMIN_SEED_PASSWORD=your_admin_password
-export USER_SEED_PASSWORD=your_user_password
-```
-
-### 2. Database Setup
+### 1. Database Setup
 Create the database schema in your local MySQL or PostgreSQL instance:
 
 ```sql
 CREATE DATABASE booking_db;
 ```
 
-### 3. Build and Run
+### 2. Build and Run
 Run the application using the Maven wrapper:
 
 ```bash
