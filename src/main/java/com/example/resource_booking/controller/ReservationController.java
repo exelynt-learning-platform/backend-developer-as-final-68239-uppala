@@ -1,15 +1,12 @@
 package com.example.resource_booking.controller;
 
 import com.example.resource_booking.dto.ReservationRequest;
-import com.example.resource_booking.model.Reservation;
+import com.example.resource_booking.dto.ReservationResponse;
 import com.example.resource_booking.model.ReservationStatus;
 import com.example.resource_booking.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +22,7 @@ public class ReservationController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Page<Reservation>> getReservations(
+    public ResponseEntity<Page<ReservationResponse>> getReservations(
             @RequestParam(required = false) ReservationStatus status,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
@@ -39,19 +36,19 @@ public class ReservationController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Reservation> getReservationById(@PathVariable Long id) {
+    public ResponseEntity<ReservationResponse> getReservationById(@PathVariable Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
     }
 
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<Reservation> createReservation(@Valid @RequestBody ReservationRequest request) {
+    public ResponseEntity<ReservationResponse> createReservation(@Valid @RequestBody ReservationRequest request) {
         return ResponseEntity.ok(reservationService.createReservation(request));
     }
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Reservation> updateReservationStatus(@PathVariable Long id, @RequestParam ReservationStatus status) {
+    public ResponseEntity<ReservationResponse> updateReservationStatus(@PathVariable Long id, @RequestParam ReservationStatus status) {
         return ResponseEntity.ok(reservationService.updateReservationStatus(id, status));
     }
 

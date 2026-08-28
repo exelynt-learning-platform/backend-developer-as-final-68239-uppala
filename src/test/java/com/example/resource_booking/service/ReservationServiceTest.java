@@ -1,6 +1,7 @@
 package com.example.resource_booking.service;
 
 import com.example.resource_booking.dto.ReservationRequest;
+import com.example.resource_booking.dto.ReservationResponse;
 import com.example.resource_booking.exception.BadRequestException;
 import com.example.resource_booking.exception.ResourceNotFoundException;
 import com.example.resource_booking.model.Reservation;
@@ -108,6 +109,7 @@ public class ReservationServiceTest {
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(resourceRepository.findById(1L)).thenReturn(Optional.of(testResource));
+        when(reservationRepository.existsOverlappingReservation(any(), any(), any())).thenReturn(false);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(testReservation);
 
         ReservationRequest request = new ReservationRequest();
@@ -116,7 +118,7 @@ public class ReservationServiceTest {
         request.setStartTime(LocalDateTime.now().plusDays(1));
         request.setEndTime(LocalDateTime.now().plusDays(2));
 
-        Reservation created = reservationService.createReservation(request);
+        ReservationResponse created = reservationService.createReservation(request);
         assertNotNull(created);
         assertEquals(ReservationStatus.PENDING, created.getStatus());
     }
@@ -126,7 +128,7 @@ public class ReservationServiceTest {
         mockSecurityContext(testUser);
         when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
 
-        Reservation result = reservationService.getReservationById(10L);
+        ReservationResponse result = reservationService.getReservationById(10L);
         assertNotNull(result);
         assertEquals(10L, result.getId());
     }
@@ -146,7 +148,7 @@ public class ReservationServiceTest {
         mockSecurityContext(adminUser);
         when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
 
-        Reservation result = reservationService.getReservationById(10L);
+        ReservationResponse result = reservationService.getReservationById(10L);
         assertNotNull(result);
         assertEquals(10L, result.getId());
     }
@@ -156,7 +158,7 @@ public class ReservationServiceTest {
         when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
         when(reservationRepository.save(any(Reservation.class))).thenReturn(testReservation);
 
-        Reservation updated = reservationService.updateReservationStatus(10L, ReservationStatus.CONFIRMED);
+        ReservationResponse updated = reservationService.updateReservationStatus(10L, ReservationStatus.CONFIRMED);
         assertNotNull(updated);
         assertEquals(ReservationStatus.CONFIRMED, updated.getStatus());
     }
