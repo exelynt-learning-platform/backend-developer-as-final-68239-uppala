@@ -43,4 +43,38 @@ public class JwtUtilsTest {
     void validateJwtToken_InvalidToken_ReturnsFalse() {
         assertFalse(jwtUtils.validateJwtToken("invalid.token.structure"));
     }
+
+    @Test
+    void testDynamicFallbackKeyWhenSecretEmpty() {
+        JwtUtils fallbackUtils = new JwtUtils();
+        ReflectionTestUtils.setField(fallbackUtils, "jwtSecret", "");
+        ReflectionTestUtils.setField(fallbackUtils, "jwtExpirationMs", expirationMs);
+
+        User user = User.builder().id(2L).username("fallbackUser").role(Role.USER).build();
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(userDetails);
+
+        String token = fallbackUtils.generateJwtToken(auth);
+        assertNotNull(token);
+        assertTrue(fallbackUtils.validateJwtToken(token));
+        assertEquals("fallbackUser", fallbackUtils.getUserNameFromJwtToken(token));
+    }
+
+    @Test
+    void testPlainTextSecretKey() {
+        JwtUtils plainUtils = new JwtUtils();
+        ReflectionTestUtils.setField(plainUtils, "jwtSecret", "mySimplePlainTextSecretKeyForTestingThatIsLongEnough");
+        ReflectionTestUtils.setField(plainUtils, "jwtExpirationMs", expirationMs);
+
+        User user = User.builder().id(3L).username("plainUser").role(Role.USER).build();
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(userDetails);
+
+        String token = plainUtils.generateJwtToken(auth);
+        assertNotNull(token);
+        assertTrue(plainUtils.validateJwtToken(token));
+        assertEquals("plainUser", plainUtils.getUserNameFromJwtToken(token));
+    }
 }

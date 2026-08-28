@@ -12,7 +12,6 @@ import com.example.resource_booking.repository.ReservationRepository;
 import com.example.resource_booking.repository.ResourceRepository;
 import com.example.resource_booking.repository.UserRepository;
 import com.example.resource_booking.security.services.UserDetailsImpl;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,25 +35,20 @@ public class ReservationService {
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
 
+    /**
+     * Explicit whitelist of valid sortable column fields on the Reservation entity.
+     * Prevents runtime PropertyNotFoundException from internal/proxy properties.
+     */
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "id", "startTime", "endTime", "status", "price"
+    );
+
     public ReservationService(ReservationRepository reservationRepository,
                               ResourceRepository resourceRepository,
                               UserRepository userRepository) {
         this.reservationRepository = reservationRepository;
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
-    }
-
-    /**
-     * Dynamically derives allowed sort fields from the Reservation entity's declared fields.
-     * This ensures the whitelist stays in sync with the entity without manual updates.
-     */
-    private static final Set<String> ALLOWED_SORT_FIELDS;
-    static {
-        Set<String> fields = new java.util.HashSet<>();
-        for (java.lang.reflect.Field field : Reservation.class.getDeclaredFields()) {
-            fields.add(field.getName());
-        }
-        ALLOWED_SORT_FIELDS = java.util.Collections.unmodifiableSet(fields);
     }
 
     /**
@@ -74,45 +68,57 @@ public class ReservationService {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 
-    public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
-                                                     int page, int size, String sortBy, String sortDir) {
-        // Case-insensitive match of sortBy against entity fields
+    /**
+     * Constructs a safe, sanitized Pageable object from raw query parameters.
+     */
+    private Pageable createPageable(int page, int size, String sortBy, String sortDir) {
         String safeSortBy = ALLOWED_SORT_FIELDS.stream()
-                .filter(f -> f.equalsIgnoreCase(sortBy))
+                .filter(field -> field.equalsIgnoreCase(sortBy))
                 .findFirst()
                 .orElse("id");
-        // Sanitize sortDir to only allow 'asc' or 'desc'
+
         String safeSortDir = (sortDir != null && sortDir.equalsIgnoreCase("desc")) ? "desc" : "asc";
 
         Sort sort = safeSortDir.equals("asc") ?
                 Sort.by(safeSortBy).ascending() :
                 Sort.by(safeSortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
 
-        UserDetailsImpl userDetails = getCurrentUserDetails();
-        boolean adminUser = isAdmin(userDetails);
+        return PageRequest.of(page, size, sort);
+    }
 
-        Specification<Reservation> spec = (root, query, cb) -> {
+    /**
+     * Builds the JPA dynamic Specification for filtering reservations by user, status, and price range.
+     */
+    private Specification<Reservation> buildSpecification(UserDetailsImpl userDetails,
+                                                          boolean adminUser,
+                                                          ReservationStatus status,
+                                                          BigDecimal minPrice,
+                                                          BigDecimal maxPrice) {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (!adminUser) {
                 predicates.add(cb.equal(root.get("user").get("id"), userDetails.getId()));
             }
-
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), status));
             }
-
             if (minPrice != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("price"), minPrice));
             }
-
             if (maxPrice != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("price"), maxPrice));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
+                                                     int page, int size, String sortBy, String sortDir) {
+        Pageable pageable = createPageable(page, size, sortBy, sortDir);
+        UserDetailsImpl userDetails = getCurrentUserDetails();
+        Specification<Reservation> spec = buildSpecification(userDetails, isAdmin(userDetails), status, minPrice, maxPrice);
 
         return reservationRepository.findAll(spec, pageable).map(ReservationResponse::new);
     }
