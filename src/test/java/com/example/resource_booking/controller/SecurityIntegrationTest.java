@@ -59,4 +59,17 @@ public class SecurityIntegrationTest {
             assertEquals(HttpStatus.FORBIDDEN, e.getStatusCode());
         }
     }
+
+    @Test
+    public void invalidJwtToken_ReturnsUnauthorizedAndAborts() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth("invalid.tampered.jwttoken");
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        try {
+            restTemplate.exchange("http://localhost:" + port + "/api/resources", HttpMethod.GET, requestEntity, String.class);
+        } catch (HttpClientErrorException e) {
+            assertEquals(HttpStatus.UNAUTHORIZED, e.getStatusCode());
+        }
+    }
 }
