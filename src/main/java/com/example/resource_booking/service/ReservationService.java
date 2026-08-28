@@ -78,8 +78,13 @@ public class ReservationService {
      * Constructs a safe, sanitized Pageable object from raw query parameters.
      */
     private Pageable createPageable(int page, int size, String sortBy, String sortDir) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            sortBy = "id";
+        }
+        final String requestedSortBy = sortBy;
+
         String safeSortBy = ALLOWED_SORT_FIELDS.stream()
-                .filter(field -> field.equalsIgnoreCase(sortBy))
+                .filter(field -> field.equalsIgnoreCase(requestedSortBy))
                 .findFirst()
                 .orElse("id");
 
