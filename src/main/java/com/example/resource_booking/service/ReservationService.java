@@ -63,10 +63,10 @@ public class ReservationService {
      */
     private UserDetailsImpl getCurrentUserDetails() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || !(auth.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new BadRequestException("Authentication required");
+        if (auth != null && auth.getPrincipal() instanceof UserDetailsImpl userDetails) {
+            return userDetails;
         }
-        return (UserDetailsImpl) auth.getPrincipal();
+        throw new BadRequestException("Authentication required");
     }
 
     private boolean isAdmin(UserDetailsImpl userDetails) {

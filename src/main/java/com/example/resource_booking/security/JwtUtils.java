@@ -1,5 +1,6 @@
 package com.example.resource_booking.security;
 
+import com.example.resource_booking.security.services.UserDetailsImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -8,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -94,8 +96,9 @@ public class JwtUtils {
     }
 
     public String generateJwtToken(Authentication authentication) {
-        com.example.resource_booking.security.services.UserDetailsImpl userPrincipal =
-                (com.example.resource_booking.security.services.UserDetailsImpl) authentication.getPrincipal();
+        if (!(authentication.getPrincipal() instanceof UserDetailsImpl userPrincipal)) {
+            throw new AuthenticationServiceException("Unsupported authenticated principal");
+        }
 
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
