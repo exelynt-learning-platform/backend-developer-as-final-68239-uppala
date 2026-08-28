@@ -78,15 +78,11 @@ public class ReservationService {
      * Constructs a safe, sanitized Pageable object from raw query parameters.
      */
     private Pageable createPageable(int page, int size, String sortBy, String sortDir) {
-        if (sortBy == null || sortBy.trim().isEmpty()) {
-            sortBy = "id";
-        }
-        final String requestedSortBy = sortBy;
-
         String safeSortBy = ALLOWED_SORT_FIELDS.stream()
-                .filter(field -> field.equalsIgnoreCase(requestedSortBy))
+                .filter(field -> field.equalsIgnoreCase(sortBy))
                 .findFirst()
-                .orElse("id");
+                .orElseThrow(() -> new BadRequestException(
+                        "Unsupported sort field. Allowed values: " + String.join(", ", ALLOWED_SORT_FIELDS)));
 
         String safeSortDir = (sortDir != null && sortDir.equalsIgnoreCase("desc")) ? "desc" : "asc";
 

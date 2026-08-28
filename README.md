@@ -66,11 +66,11 @@ export DB_USERNAME=root
 export DB_PASSWORD=your_database_password
 
 # JWT Secret (minimum 32 bytes / 256 bits)
-export JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+export JWT_SECRET=your_unique_secure_jwt_secret_key_minimum_32_bytes
 
 # Initial Seed Credentials
-export ADMIN_SEED_PASSWORD=admin123
-export USER_SEED_PASSWORD=user123
+export ADMIN_SEED_PASSWORD=your_admin_password
+export USER_SEED_PASSWORD=your_user_password
 ```
 
 ### 2. Database Setup

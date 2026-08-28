@@ -27,7 +27,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -197,18 +196,12 @@ public class ReservationServiceTest {
     }
 
     @Test
-    void getReservations_WithNullSortBy_Success() {
+    void getReservations_WithUnsupportedSortField_ThrowsBadRequestException() {
         mockSecurityContext(testUser);
-        org.springframework.data.domain.Page<Reservation> page =
-                new org.springframework.data.domain.PageImpl<>(List.of(testReservation));
-        when(reservationRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class), any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
 
-        org.springframework.data.domain.Page<ReservationResponse> result =
-                reservationService.getReservations(null, null, null, 0, 10, null, null);
-
-        assertNotNull(result);
-        assertEquals(1, result.getTotalElements());
+        assertThrows(BadRequestException.class, () -> reservationService.getReservations(
+                null, null, null, 0, 10, "unknownField", "asc"));
+        verifyNoInteractions(reservationRepository);
     }
 
     @Test

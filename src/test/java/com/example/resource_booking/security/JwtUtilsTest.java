@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 public class JwtUtilsTest {
 
     private JwtUtils jwtUtils;
-    private final String secret = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    private final String secret = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
     private final int expirationMs = 3600000;
 
     @BeforeEach
@@ -58,6 +58,22 @@ public class JwtUtilsTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                 () -> fallbackUtils.generateJwtToken(auth));
         assertTrue(exception.getMessage().contains("JWT secret is required"));
+    }
+
+    @Test
+    void knownInsecureDefaultSecret_ThrowsClearConfigurationError() {
+        JwtUtils insecureUtils = new JwtUtils();
+        ReflectionTestUtils.setField(insecureUtils, "jwtSecret", "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970");
+        ReflectionTestUtils.setField(insecureUtils, "jwtExpirationMs", expirationMs);
+
+        User user = User.builder().id(2L).username("user").role(Role.USER).build();
+        UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(userDetails);
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> insecureUtils.generateJwtToken(auth));
+        assertTrue(exception.getMessage().contains("Insecure default JWT secret detected"));
     }
 
     @Test

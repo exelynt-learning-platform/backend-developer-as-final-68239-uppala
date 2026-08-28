@@ -17,10 +17,22 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.Set;
 
 @Component
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
+
+    private static final Set<String> INSECURE_DEFAULT_SECRETS = Set.of(
+            "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970",
+            "your_unique_secure_jwt_secret_key_minimum_32_bytes",
+            "your-custom-secure-256-bit-jwt-secret-key-here",
+            "secret",
+            "defaultsecret",
+            "jwtsecret",
+            "changeme",
+            "12345678901234567890123456789012"
+    );
 
     @Value("${jwt.secret:}")
     private String jwtSecret;
@@ -36,46 +48,57 @@ public class JwtUtils {
     }
 
     private synchronized Key resolveSigningKey() {
-        if (jwtSecret != null && !jwtSecret.trim().isEmpty()) {
-            String trimmed = jwtSecret.trim();
+        if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
+            throw new IllegalStateException(
+                    "JWT secret is required. Set JWT_SECRET environment variable to a secure secret of at least 32 bytes.");
+        }
 
-            // 1. Try Hex decode if it looks like a hex string (e.g. 64 hex characters for 256 bits)
-            if (trimmed.matches("^[0-9a-fA-F]{64,}$")) {
-                try {
-                    byte[] hexBytes = decodeHex(trimmed);
-                    return Keys.hmacShaKeyFor(hexBytes);
-                } catch (Exception e) {
-                    logger.debug("Hex decode failed, falling back: {}", e.getMessage());
-                }
-            }
+        String trimmed = jwtSecret.trim();
 
-            // 2. Try Base64 decode
-            try {
-                byte[] base64Bytes = Decoders.BASE64.decode(trimmed);
-                if (base64Bytes.length >= 32) {
-                    return Keys.hmacShaKeyFor(base64Bytes);
-                }
-            } catch (Exception e) {
-                logger.debug("Base64 decode failed, falling back: {}", e.getMessage());
-            }
-
-            // 3. Fallback to raw UTF-8 bytes with SHA-256 derivation if < 32 bytes
-            try {
-                byte[] rawBytes = trimmed.getBytes(StandardCharsets.UTF_8);
-                if (rawBytes.length >= 32) {
-                    return Keys.hmacShaKeyFor(rawBytes);
-                } else {
-                    MessageDigest md = MessageDigest.getInstance("SHA-256");
-                    byte[] hashed = md.digest(rawBytes);
-                    return Keys.hmacShaKeyFor(hashed);
-                }
-            } catch (Exception e) {
-                logger.error("Error creating key from secret string: {}", e.getMessage());
+        // Enforce check against known insecure/default secrets
+        for (String insecure : INSECURE_DEFAULT_SECRETS) {
+            if (trimmed.equalsIgnoreCase(insecure)) {
+                throw new IllegalStateException(
+                        "Insecure default JWT secret detected. Please configure a unique, secure JWT_SECRET environment variable.");
             }
         }
 
+        // 1. Try Hex decode if it looks like a hex string (e.g. 64 hex characters for 256 bits)
+        if (trimmed.matches("^[0-9a-fA-F]{64,}$")) {
+            try {
+                byte[] hexBytes = decodeHex(trimmed);
+                return Keys.hmacShaKeyFor(hexBytes);
+            } catch (Exception e) {
+                logger.debug("Hex decode failed, falling back: {}", e.getMessage());
+            }
+        }
+
+        // 2. Try Base64 decode
+        try {
+            byte[] base64Bytes = Decoders.BASE64.decode(trimmed);
+            if (base64Bytes.length >= 32) {
+                return Keys.hmacShaKeyFor(base64Bytes);
+            }
+        } catch (Exception e) {
+            logger.debug("Base64 decode failed, falling back: {}", e.getMessage());
+        }
+
+        // 3. Fallback to raw UTF-8 bytes with SHA-256 derivation if < 32 bytes
+        try {
+            byte[] rawBytes = trimmed.getBytes(StandardCharsets.UTF_8);
+            if (rawBytes.length >= 32) {
+                return Keys.hmacShaKeyFor(rawBytes);
+            } else {
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                byte[] hashed = md.digest(rawBytes);
+                return Keys.hmacShaKeyFor(hashed);
+            }
+        } catch (Exception e) {
+            logger.error("Error creating key from secret string: {}", e.getMessage());
+        }
+
         throw new IllegalStateException(
-                "JWT secret is required. Set JWT_SECRET to a stable secret of at least 32 bytes.");
+                "Unable to configure a valid cryptographic key from the provided JWT_SECRET.");
     }
 
     private byte[] decodeHex(String hex) {
