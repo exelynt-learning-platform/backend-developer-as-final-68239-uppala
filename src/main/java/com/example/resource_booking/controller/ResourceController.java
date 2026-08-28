@@ -2,7 +2,7 @@ package com.example.resource_booking.controller;
 
 import com.example.resource_booking.dto.ResourceRequest;
 import com.example.resource_booking.dto.ResourceResponse;
-import com.example.resource_booking.model.Resource;
+import com.example.resource_booking.mapper.ResourceMapper;
 import com.example.resource_booking.service.ResourceService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -16,16 +16,18 @@ import java.util.List;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final ResourceMapper resourceMapper;
 
-    public ResourceController(ResourceService resourceService) {
+    public ResourceController(ResourceService resourceService, ResourceMapper resourceMapper) {
         this.resourceService = resourceService;
+        this.resourceMapper = resourceMapper;
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<List<ResourceResponse>> getAllResources() {
         List<ResourceResponse> responses = resourceService.getAllResources().stream()
-                .map(ResourceResponse::new)
+                .map(resourceMapper::toResponse)
                 .toList();
         return ResponseEntity.ok(responses);
     }
@@ -33,29 +35,21 @@ public class ResourceController {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<ResourceResponse> getResourceById(@PathVariable Long id) {
-        return ResponseEntity.ok(new ResourceResponse(resourceService.getResourceById(id)));
+        return ResponseEntity.ok(resourceMapper.toResponse(resourceService.getResourceById(id)));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResourceResponse> createResource(@Valid @RequestBody ResourceRequest request) {
-        Resource resource = Resource.builder()
-                .name(request.getName())
-                .type(request.getType())
-                .description(request.getDescription())
-                .build();
-        return ResponseEntity.ok(new ResourceResponse(resourceService.createResource(resource)));
+        return ResponseEntity.ok(resourceMapper.toResponse(
+                resourceService.createResource(resourceMapper.toEntity(request))));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ResourceResponse> updateResource(@PathVariable Long id, @Valid @RequestBody ResourceRequest request) {
-        Resource resourceDetails = Resource.builder()
-                .name(request.getName())
-                .type(request.getType())
-                .description(request.getDescription())
-                .build();
-        return ResponseEntity.ok(new ResourceResponse(resourceService.updateResource(id, resourceDetails)));
+        return ResponseEntity.ok(resourceMapper.toResponse(
+                resourceService.updateResource(id, resourceMapper.toEntity(request))));
     }
 
     @DeleteMapping("/{id}")

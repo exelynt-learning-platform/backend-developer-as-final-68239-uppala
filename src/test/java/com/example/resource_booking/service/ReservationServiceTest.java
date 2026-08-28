@@ -9,6 +9,7 @@ import com.example.resource_booking.model.ReservationStatus;
 import com.example.resource_booking.model.Resource;
 import com.example.resource_booking.model.Role;
 import com.example.resource_booking.model.User;
+import com.example.resource_booking.mapper.ReservationMapper;
 import com.example.resource_booking.repository.ReservationRepository;
 import com.example.resource_booking.repository.ResourceRepository;
 import com.example.resource_booking.repository.UserRepository;
@@ -45,6 +46,9 @@ public class ReservationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ReservationMapper reservationMapper;
+
     @InjectMocks
     private ReservationService reservationService;
 
@@ -75,6 +79,9 @@ public class ReservationServiceTest {
                 .status(ReservationStatus.PENDING)
                 .price(new BigDecimal("100.00"))
                 .build();
+
+        when(reservationMapper.toResponse(any(Reservation.class)))
+                .thenAnswer(invocation -> new ReservationResponse(invocation.getArgument(0)));
     }
 
     @AfterEach
@@ -85,10 +92,10 @@ public class ReservationServiceTest {
     private void mockSecurityContext(User user) {
         UserDetailsImpl userDetails = UserDetailsImpl.build(user);
         Authentication authentication = mock(Authentication.class);
-        lenient().when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
 
         SecurityContext securityContext = mock(SecurityContext.class);
-        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
     }
 

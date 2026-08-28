@@ -8,6 +8,7 @@ import com.example.resource_booking.model.Reservation;
 import com.example.resource_booking.model.ReservationStatus;
 import com.example.resource_booking.model.Resource;
 import com.example.resource_booking.model.User;
+import com.example.resource_booking.mapper.ReservationMapper;
 import com.example.resource_booking.repository.ReservationRepository;
 import com.example.resource_booking.repository.ResourceRepository;
 import com.example.resource_booking.repository.UserRepository;
@@ -42,6 +43,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
+    private final ReservationMapper reservationMapper;
 
     /**
      * Explicit whitelist of valid sortable column fields on the Reservation entity.
@@ -53,10 +55,12 @@ public class ReservationService {
 
     public ReservationService(ReservationRepository reservationRepository,
                               ResourceRepository resourceRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              ReservationMapper reservationMapper) {
         this.reservationRepository = reservationRepository;
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
+        this.reservationMapper = reservationMapper;
     }
 
     /**
@@ -139,7 +143,7 @@ public class ReservationService {
         UserDetailsImpl userDetails = getCurrentUserDetails();
         Specification<Reservation> spec = buildSpecification(userDetails, isAdmin(userDetails), status, minPrice, maxPrice);
 
-        return reservationRepository.findAll(spec, pageable).map(ReservationResponse::new);
+        return reservationRepository.findAll(spec, pageable).map(reservationMapper::toResponse);
     }
 
     private void validateSearchParameters(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
@@ -162,7 +166,7 @@ public class ReservationService {
             throw new AccessDeniedException("You do not have permission to view this reservation");
         }
 
-        return new ReservationResponse(reservation);
+        return reservationMapper.toResponse(reservation);
     }
 
     public ReservationResponse createReservation(ReservationRequest request) {
@@ -194,7 +198,7 @@ public class ReservationService {
                 .price(request.getPrice())
                 .build();
 
-        return new ReservationResponse(reservationRepository.save(reservation));
+        return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
 
     public ReservationResponse updateReservationStatus(Long id, ReservationStatus status) {
@@ -202,7 +206,7 @@ public class ReservationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
         requireAdmin();
         reservation.setStatus(status);
-        return new ReservationResponse(reservationRepository.save(reservation));
+        return reservationMapper.toResponse(reservationRepository.save(reservation));
     }
 
     private void requireAdmin() {
@@ -231,6 +235,9 @@ public class ReservationService {
     public void deleteReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
+        if (reservation == null) {
+            throw new ResourceNotFoundException("Reservation not found with id: " + id);
+        }
         reservationRepository.delete(reservation);
     }
 }
