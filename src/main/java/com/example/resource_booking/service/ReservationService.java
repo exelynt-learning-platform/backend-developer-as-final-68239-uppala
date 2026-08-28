@@ -32,17 +32,30 @@ import java.util.Set;
 @Service
 public class ReservationService {
 
-    @Autowired
-    private ReservationRepository reservationRepository;
+    private final ReservationRepository reservationRepository;
+    private final ResourceRepository resourceRepository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private ResourceRepository resourceRepository;
+    public ReservationService(ReservationRepository reservationRepository,
+                              ResourceRepository resourceRepository,
+                              UserRepository userRepository) {
+        this.reservationRepository = reservationRepository;
+        this.resourceRepository = resourceRepository;
+        this.userRepository = userRepository;
+    }
 
-    @Autowired
-    private UserRepository userRepository;
-
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id", "startTime", "endTime", "price", "status");
+    /**
+     * Dynamically derives allowed sort fields from the Reservation entity's declared fields.
+     * This ensures the whitelist stays in sync with the entity without manual updates.
+     */
+    private static final Set<String> ALLOWED_SORT_FIELDS;
+    static {
+        Set<String> fields = new java.util.HashSet<>();
+        for (java.lang.reflect.Field field : Reservation.class.getDeclaredFields()) {
+            fields.add(field.getName());
+        }
+        ALLOWED_SORT_FIELDS = java.util.Collections.unmodifiableSet(fields);
+    }
 
     /**
      * Extracts the authenticated UserDetailsImpl from the SecurityContext.
@@ -63,8 +76,11 @@ public class ReservationService {
 
     public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
                                                      int page, int size, String sortBy, String sortDir) {
-        // Sanitize sortBy against allowed fields to prevent injection attacks or 500 errors
-        String safeSortBy = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
+        // Case-insensitive match of sortBy against entity fields
+        String safeSortBy = ALLOWED_SORT_FIELDS.stream()
+                .filter(f -> f.equalsIgnoreCase(sortBy))
+                .findFirst()
+                .orElse("id");
         // Sanitize sortDir to only allow 'asc' or 'desc'
         String safeSortDir = (sortDir != null && sortDir.equalsIgnoreCase("desc")) ? "desc" : "asc";
 

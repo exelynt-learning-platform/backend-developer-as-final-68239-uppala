@@ -2,7 +2,6 @@ package com.example.resource_booking.controller;
 
 import com.example.resource_booking.model.Resource;
 import com.example.resource_booking.service.ResourceService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -13,8 +12,11 @@ import java.util.List;
 @RequestMapping("/api/resources")
 public class ResourceController {
 
-    @Autowired
-    private ResourceService resourceService;
+    private final ResourceService resourceService;
+
+    public ResourceController(ResourceService resourceService) {
+        this.resourceService = resourceService;
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

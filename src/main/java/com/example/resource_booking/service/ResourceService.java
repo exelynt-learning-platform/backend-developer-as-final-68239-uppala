@@ -3,7 +3,6 @@ package com.example.resource_booking.service;
 import com.example.resource_booking.exception.ResourceNotFoundException;
 import com.example.resource_booking.model.Resource;
 import com.example.resource_booking.repository.ResourceRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,8 +10,11 @@ import java.util.List;
 @Service
 public class ResourceService {
     
-    @Autowired
-    private ResourceRepository resourceRepository;
+    private final ResourceRepository resourceRepository;
+
+    public ResourceService(ResourceRepository resourceRepository) {
+        this.resourceRepository = resourceRepository;
+    }
 
     public List<Resource> getAllResources() {
         return resourceRepository.findAll();

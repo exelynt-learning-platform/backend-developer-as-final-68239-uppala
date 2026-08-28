@@ -5,7 +5,6 @@ import com.example.resource_booking.dto.ReservationResponse;
 import com.example.resource_booking.model.ReservationStatus;
 import com.example.resource_booking.service.ReservationService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,8 +16,11 @@ import java.math.BigDecimal;
 @RequestMapping("/api/reservations")
 public class ReservationController {
 
-    @Autowired
-    private ReservationService reservationService;
+    private final ReservationService reservationService;
+
+    public ReservationController(ReservationService reservationService) {
+        this.reservationService = reservationService;
+    }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")

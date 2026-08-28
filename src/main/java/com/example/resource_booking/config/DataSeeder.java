@@ -5,7 +5,7 @@ import com.example.resource_booking.model.Role;
 import com.example.resource_booking.model.User;
 import com.example.resource_booking.repository.ResourceRepository;
 import com.example.resource_booking.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -13,20 +13,23 @@ import org.springframework.stereotype.Component;
 @Component
 public class DataSeeder implements CommandLineRunner {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final ResourceRepository resourceRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final String adminPassword;
+    private final String userPassword;
 
-    @Autowired
-    private ResourceRepository resourceRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @org.springframework.beans.factory.annotation.Value("${app.seed.admin-password:admin123}")
-    private String adminPassword;
-
-    @org.springframework.beans.factory.annotation.Value("${app.seed.user-password:user123}")
-    private String userPassword;
+    public DataSeeder(UserRepository userRepository,
+                      ResourceRepository resourceRepository,
+                      PasswordEncoder passwordEncoder,
+                      @Value("${app.seed.admin-password:admin123}") String adminPassword,
+                      @Value("${app.seed.user-password:user123}") String userPassword) {
+        this.userRepository = userRepository;
+        this.resourceRepository = resourceRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.adminPassword = adminPassword;
+        this.userPassword = userPassword;
+    }
 
     @Override
     public void run(String... args) throws Exception {
