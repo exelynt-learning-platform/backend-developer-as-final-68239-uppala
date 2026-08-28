@@ -37,6 +37,24 @@ The application can be configured via environment variables or local configurati
 | `ADMIN_SEED_PASSWORD` | Initial password for the admin seed account | *(Configurable via ENV)* |
 | `USER_SEED_PASSWORD` | Initial password for the standard user seed account | *(Configurable via ENV)* |
 
+## API endpoints
+
+All endpoints other than login require a Bearer token. `USER` accounts can read resources and create/view only their own reservations; `ADMIN` accounts can manage resources and reservations.
+
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `POST` | `/api/auth/login` | Public | Authenticate and obtain a JWT. |
+| `GET` | `/api/resources` | USER, ADMIN | List resources. |
+| `GET` | `/api/resources/{id}` | USER, ADMIN | Get one resource. |
+| `POST` | `/api/resources` | ADMIN | Create a resource. |
+| `PUT` | `/api/resources/{id}` | ADMIN | Update a resource. |
+| `DELETE` | `/api/resources/{id}` | ADMIN | Delete a resource. |
+| `GET` | `/api/reservations` | USER, ADMIN | List reservations (users see only their own). Supports `status`, `minPrice`, `maxPrice`, `page`, `size`, `sortBy`, and `sortDir`. |
+| `GET` | `/api/reservations/{id}` | USER, ADMIN | Get a reservation (users must own it). |
+| `POST` | `/api/reservations` | USER, ADMIN | Create a pending reservation. Price must be positive, have at most two decimal places, and fit `DECIMAL(10,2)`. |
+| `PUT` | `/api/reservations/{id}/status?status=PENDING|CONFIRMED|CANCELLED` | ADMIN | Update reservation status. |
+| `DELETE` | `/api/reservations/{id}` | ADMIN | Delete a reservation. |
+
 ## Setup & Running Locally
 
 ### 1. Database Setup

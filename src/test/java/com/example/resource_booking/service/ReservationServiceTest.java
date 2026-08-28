@@ -155,12 +155,34 @@ public class ReservationServiceTest {
 
     @Test
     void updateReservationStatus_Success() {
+        User adminUser = User.builder().id(99L).username("admin").role(Role.ADMIN).build();
+        mockSecurityContext(adminUser);
         when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
         when(reservationRepository.save(any(Reservation.class))).thenReturn(testReservation);
 
         ReservationResponse updated = reservationService.updateReservationStatus(10L, ReservationStatus.CONFIRMED);
         assertNotNull(updated);
         assertEquals(ReservationStatus.CONFIRMED, updated.getStatus());
+    }
+
+    @Test
+    void updateReservationStatus_AsNonAdmin_ThrowsAccessDenied() {
+        mockSecurityContext(testUser);
+
+        assertThrows(AccessDeniedException.class,
+                () -> reservationService.updateReservationStatus(10L, ReservationStatus.CONFIRMED));
+        verifyNoInteractions(reservationRepository);
+    }
+
+    @Test
+    void createReservation_WithInvalidPriceScale_ThrowsBadRequestException() {
+        ReservationRequest request = new ReservationRequest();
+        request.setResourceId(1L);
+        request.setPrice(new BigDecimal("10.999"));
+        request.setStartTime(LocalDateTime.now().plusDays(1));
+        request.setEndTime(LocalDateTime.now().plusDays(2));
+
+        assertThrows(BadRequestException.class, () -> reservationService.createReservation(request));
     }
 
     @Test

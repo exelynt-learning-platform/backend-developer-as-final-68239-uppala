@@ -45,7 +45,7 @@ public class JwtUtilsTest {
     }
 
     @Test
-    void testDynamicFallbackKeyWhenSecretEmpty() {
+    void missingSecret_ThrowsClearConfigurationError() {
         JwtUtils fallbackUtils = new JwtUtils();
         ReflectionTestUtils.setField(fallbackUtils, "jwtSecret", "");
         ReflectionTestUtils.setField(fallbackUtils, "jwtExpirationMs", expirationMs);
@@ -55,10 +55,9 @@ public class JwtUtilsTest {
         Authentication auth = mock(Authentication.class);
         when(auth.getPrincipal()).thenReturn(userDetails);
 
-        String token = fallbackUtils.generateJwtToken(auth);
-        assertNotNull(token);
-        assertTrue(fallbackUtils.validateJwtToken(token));
-        assertEquals("fallbackUser", fallbackUtils.getUserNameFromJwtToken(token));
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> fallbackUtils.generateJwtToken(auth));
+        assertTrue(exception.getMessage().contains("JWT secret is required"));
     }
 
     @Test

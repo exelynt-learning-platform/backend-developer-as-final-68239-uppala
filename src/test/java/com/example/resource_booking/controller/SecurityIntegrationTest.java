@@ -15,7 +15,10 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "jwt.secret=01234567890123456789012345678901"
+)
 public class SecurityIntegrationTest {
 
     @LocalServerPort

@@ -72,8 +72,8 @@ public class JwtUtils {
             }
         }
 
-        logger.warn("JWT secret is not configured. Generating a secure random HMAC-SHA256 key for this session.");
-        return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        throw new IllegalStateException(
+                "JWT secret is required. Set JWT_SECRET to a stable secret of at least 32 bytes.");
     }
 
     private byte[] decodeHex(String hex) {

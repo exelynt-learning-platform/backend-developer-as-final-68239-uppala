@@ -31,6 +31,12 @@ import java.util.Set;
 @Service
 public class ReservationService {
 
+    /**
+     * A reservation amount is stored as DECIMAL(10,2); retaining the same limit in
+     * the service prevents values that cannot be represented consistently.
+     */
+    private static final BigDecimal MAX_RESERVATION_PRICE = new BigDecimal("99999999.99");
+
     private final ReservationRepository reservationRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
@@ -140,6 +146,7 @@ public class ReservationService {
         if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().isEqual(request.getEndTime())) {
             throw new BadRequestException("Start time must be before end time");
         }
+        validateReservationPrice(request.getPrice());
 
         UserDetailsImpl userDetails = getCurrentUserDetails();
         User currentUser = userRepository.findById(userDetails.getId())
@@ -168,10 +175,27 @@ public class ReservationService {
     }
 
     public ReservationResponse updateReservationStatus(Long id, ReservationStatus status) {
+        UserDetailsImpl userDetails = getCurrentUserDetails();
+        if (!isAdmin(userDetails)) {
+            throw new AccessDeniedException("Only administrators can update reservation status");
+        }
+
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
         reservation.setStatus(status);
         return new ReservationResponse(reservationRepository.save(reservation));
+    }
+
+    private void validateReservationPrice(BigDecimal price) {
+        if (price == null || price.signum() <= 0) {
+            throw new BadRequestException("Reservation price must be positive");
+        }
+        if (price.scale() > 2) {
+            throw new BadRequestException("Reservation price can have at most two decimal places");
+        }
+        if (price.compareTo(MAX_RESERVATION_PRICE) > 0) {
+            throw new BadRequestException("Reservation price exceeds the maximum allowed amount");
+        }
     }
 
     public void deleteReservation(Long id) {
