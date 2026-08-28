@@ -34,11 +34,7 @@ public class ReservationController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-
-        return ResponseEntity.ok(reservationService.getReservations(status, minPrice, maxPrice, pageable));
+        return ResponseEntity.ok(reservationService.getReservations(status, minPrice, maxPrice, page, size, sortBy, sortDir));
     }
 
     @GetMapping("/{id}")

@@ -1,24 +1,28 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/booking_db?createDatabaseIfNotExist=true
-    username: root
-    password: Aditya@2124
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/booking_db?createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Aditya@2124}
+    driver-class-name: ${DB_DRIVER:com.mysql.cj.jdbc.Driver}
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
 
 jwt:
-  secret: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-  expirationMs: 86400000 # 24 hours
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  expirationMs: ${JWT_EXPIRATION_MS:86400000} # 24 hours
+
+app:
+  seed:
+    admin-password: ${ADMIN_SEED_PASSWORD:admin123}
+    user-password: ${USER_SEED_PASSWORD:user123}
 
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
   error:
     include-message: always
 

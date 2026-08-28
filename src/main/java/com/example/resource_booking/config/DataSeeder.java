@@ -22,19 +22,25 @@ public class DataSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @org.springframework.beans.factory.annotation.Value("${app.seed.admin-password:admin123}")
+    private String adminPassword;
+
+    @org.springframework.beans.factory.annotation.Value("${app.seed.user-password:user123}")
+    private String userPassword;
+
     @Override
     public void run(String... args) throws Exception {
         if (userRepository.count() == 0) {
             User admin = User.builder()
                     .username("admin")
-                    .password(passwordEncoder.encode("admin123"))
+                    .password(passwordEncoder.encode(adminPassword))
                     .role(Role.ADMIN)
                     .build();
             userRepository.save(admin);
 
             User user = User.builder()
                     .username("user")
-                    .password(passwordEncoder.encode("user123"))
+                    .password(passwordEncoder.encode(userPassword))
                     .role(Role.USER)
                     .build();
             userRepository.save(user);

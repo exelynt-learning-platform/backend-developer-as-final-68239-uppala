@@ -36,6 +36,15 @@ public class ReservationService {
     @Autowired
     private UserRepository userRepository;
 
+    public Page<Reservation> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
+                                            int page, int size, String sortBy, String sortDir) {
+        org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase("asc") ?
+                org.springframework.data.domain.Sort.by(sortBy).ascending() :
+                org.springframework.data.domain.Sort.by(sortBy).descending();
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        return getReservations(status, minPrice, maxPrice, pageable);
+    }
+
     public Page<Reservation> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         boolean isAdmin = userDetails.getAuthorities().stream()
