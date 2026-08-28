@@ -15,6 +15,9 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final org.slf4j.Logger logger =
+            org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> resourceNotFoundException(ResourceNotFoundException ex) {
         Map<String, String> response = new HashMap<>();
@@ -64,6 +67,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> globalExceptionHandler(Exception ex) {
+        logger.error("Unhandled exception: {}", ex.getMessage(), ex);
         Map<String, String> response = new HashMap<>();
         response.put("error", "An unexpected error occurred");
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
