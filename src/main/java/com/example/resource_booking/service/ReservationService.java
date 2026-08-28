@@ -107,17 +107,20 @@ public class ReservationService {
                                                           ReservationStatus status,
                                                           BigDecimal minPrice,
                                                           BigDecimal maxPrice) {
-        return (root, query, criteriaBuilder) -> criteriaBuilder.and(buildPredicates(
-                root, criteriaBuilder, userDetails, adminUser, status, minPrice, maxPrice));
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = buildPredicates(
+                    root, criteriaBuilder, userDetails, adminUser, status, minPrice, maxPrice);
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
-    private Predicate[] buildPredicates(Root<Reservation> root,
-                                        CriteriaBuilder criteriaBuilder,
-                                        UserDetailsImpl userDetails,
-                                        boolean adminUser,
-                                        ReservationStatus status,
-                                        BigDecimal minPrice,
-                                        BigDecimal maxPrice) {
+    private List<Predicate> buildPredicates(Root<Reservation> root,
+                                            CriteriaBuilder criteriaBuilder,
+                                            UserDetailsImpl userDetails,
+                                            boolean adminUser,
+                                            ReservationStatus status,
+                                            BigDecimal minPrice,
+                                            BigDecimal maxPrice) {
         List<Predicate> predicates = new ArrayList<>();
 
         if (!adminUser) {
@@ -133,7 +136,7 @@ public class ReservationService {
             predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
         }
 
-        return predicates.toArray(new Predicate[0]);
+        return predicates;
     }
 
     public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,

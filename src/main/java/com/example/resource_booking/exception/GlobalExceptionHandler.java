@@ -8,7 +8,9 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,6 +72,23 @@ public class GlobalExceptionHandler {
         logger.warn("Invalid request argument: {}", ex.getMessage());
         Map<String, String> response = new HashMap<>();
         response.put("error", "Invalid request parameter");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> methodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+        Map<String, String> response = new HashMap<>();
+        Class<?> requiredType = ex.getRequiredType();
+        if (requiredType != null && requiredType.isEnum()) {
+            String allowedValues = Arrays.stream(requiredType.getEnumConstants())
+                    .map(Object::toString)
+                    .reduce((first, second) -> first + ", " + second)
+                    .orElse("");
+            response.put("error", "Invalid value for '" + ex.getName()
+                    + "'. Allowed values: " + allowedValues);
+        } else {
+            response.put("error", "Invalid value for request parameter '" + ex.getName() + "'");
+        }
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
