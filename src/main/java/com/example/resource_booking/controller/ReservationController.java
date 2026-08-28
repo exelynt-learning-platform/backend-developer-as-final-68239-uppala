@@ -24,6 +24,7 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Page<Reservation>> getReservations(
             @RequestParam(required = false) ReservationStatus status,
             @RequestParam(required = false) BigDecimal minPrice,
@@ -41,11 +42,13 @@ public class ReservationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Reservation> getReservationById(@PathVariable Long id) {
         return ResponseEntity.ok(reservationService.getReservationById(id));
     }
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public ResponseEntity<Reservation> createReservation(@Valid @RequestBody ReservationRequest request) {
         return ResponseEntity.ok(reservationService.createReservation(request));
     }

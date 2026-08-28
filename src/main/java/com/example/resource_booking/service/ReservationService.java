@@ -38,14 +38,14 @@ public class ReservationService {
 
     public Page<Reservation> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable) {
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User currentUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         Specification<Reservation> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (currentUser.getRole() == Role.USER) {
-                predicates.add(cb.equal(root.get("user").get("id"), currentUser.getId()));
+            if (!isAdmin) {
+                predicates.add(cb.equal(root.get("user").get("id"), userDetails.getId()));
             }
 
             if (status != null) {
@@ -71,10 +71,10 @@ public class ReservationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
 
         UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        User currentUser = userRepository.findById(userDetails.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        if (currentUser.getRole() == Role.USER && !reservation.getUser().getId().equals(currentUser.getId())) {
+        if (!isAdmin && !reservation.getUser().getId().equals(userDetails.getId())) {
             throw new org.springframework.security.access.AccessDeniedException("You do not have permission to view this reservation");
         }
 
