@@ -40,7 +40,7 @@ public class JwtUtils {
     @Value("${jwt.expirationMs:86400000}")
     private int jwtExpirationMs;
 
-    private Key signingKey;
+    private volatile Key signingKey;
 
     @PostConstruct
     public void init() {
@@ -111,7 +111,7 @@ public class JwtUtils {
         return data;
     }
 
-    private Key key() {
+    private synchronized Key key() {
         if (this.signingKey == null) {
             this.signingKey = resolveSigningKey();
         }

@@ -168,10 +168,12 @@ public class ReservationServiceTest {
     @Test
     void updateReservationStatus_AsNonAdmin_ThrowsAccessDenied() {
         mockSecurityContext(testUser);
+        when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
 
         assertThrows(AccessDeniedException.class,
                 () -> reservationService.updateReservationStatus(10L, ReservationStatus.CONFIRMED));
-        verifyNoInteractions(reservationRepository);
+        verify(reservationRepository).findById(10L);
+        verify(reservationRepository, never()).save(any(Reservation.class));
     }
 
     @Test

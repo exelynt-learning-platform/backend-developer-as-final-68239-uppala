@@ -147,9 +147,7 @@ public class ReservationService {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
 
-        UserDetailsImpl userDetails = getCurrentUserDetails();
-
-        if (!isAdmin(userDetails) && !reservation.getUser().getId().equals(userDetails.getId())) {
+        if (!canAccessReservation(reservation)) {
             throw new AccessDeniedException("You do not have permission to view this reservation");
         }
 
@@ -189,15 +187,22 @@ public class ReservationService {
     }
 
     public ReservationResponse updateReservationStatus(Long id, ReservationStatus status) {
-        UserDetailsImpl userDetails = getCurrentUserDetails();
-        if (!isAdmin(userDetails)) {
-            throw new AccessDeniedException("Only administrators can update reservation status");
-        }
-
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
+        requireAdmin();
         reservation.setStatus(status);
         return new ReservationResponse(reservationRepository.save(reservation));
+    }
+
+    private void requireAdmin() {
+        if (!isAdmin(getCurrentUserDetails())) {
+            throw new AccessDeniedException("Only administrators can update reservation status");
+        }
+    }
+
+    private boolean canAccessReservation(Reservation reservation) {
+        UserDetailsImpl userDetails = getCurrentUserDetails();
+        return isAdmin(userDetails) || reservation.getUser().getId().equals(userDetails.getId());
     }
 
     private void validateReservationPrice(BigDecimal price) {
