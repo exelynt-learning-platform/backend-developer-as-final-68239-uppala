@@ -215,10 +215,21 @@ public class ReservationServiceTest {
 
     @Test
     void deleteReservation_Success() {
+        User adminUser = User.builder().id(99L).username("admin").role(Role.ADMIN).build();
+        mockSecurityContext(adminUser);
         when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
         doNothing().when(reservationRepository).delete(testReservation);
 
         assertDoesNotThrow(() -> reservationService.deleteReservation(10L));
         verify(reservationRepository, times(1)).delete(testReservation);
+    }
+
+    @Test
+    void deleteReservation_AsNonAdmin_ThrowsAccessDenied() {
+        mockSecurityContext(testUser);
+        when(reservationRepository.findById(10L)).thenReturn(Optional.of(testReservation));
+
+        assertThrows(AccessDeniedException.class, () -> reservationService.deleteReservation(10L));
+        verify(reservationRepository, never()).delete(any(Reservation.class));
     }
 }

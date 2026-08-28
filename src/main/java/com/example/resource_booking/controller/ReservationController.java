@@ -2,7 +2,6 @@ package com.example.resource_booking.controller;
 
 import com.example.resource_booking.dto.ReservationRequest;
 import com.example.resource_booking.dto.ReservationResponse;
-import com.example.resource_booking.exception.BadRequestException;
 import com.example.resource_booking.model.ReservationStatus;
 import com.example.resource_booking.service.ReservationService;
 import jakarta.validation.Valid;
@@ -34,18 +33,7 @@ public class ReservationController {
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "asc") String sortDir) {
 
-        validatePagination(page, size);
-
         return ResponseEntity.ok(reservationService.getReservations(status, minPrice, maxPrice, page, size, sortBy, sortDir));
-    }
-
-    private void validatePagination(int page, int size) {
-        if (page < 0) {
-            throw new BadRequestException("Page number must not be negative");
-        }
-        if (size < 1 || size > 100) {
-            throw new BadRequestException("Page size must be between 1 and 100");
-        }
     }
 
     @GetMapping("/{id}")

@@ -235,9 +235,7 @@ public class ReservationService {
     public void deleteReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found with id: " + id));
-        if (reservation == null) {
-            throw new ResourceNotFoundException("Reservation not found with id: " + id);
-        }
+        requireAdmin();
         reservationRepository.delete(reservation);
     }
 }
