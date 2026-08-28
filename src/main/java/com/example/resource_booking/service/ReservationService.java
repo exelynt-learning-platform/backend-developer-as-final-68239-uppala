@@ -36,11 +36,19 @@ public class ReservationService {
     @Autowired
     private UserRepository userRepository;
 
+    private static final java.util.Set<String> ALLOWED_SORT_FIELDS = java.util.Set.of(
+            "id", "startTime", "endTime", "price", "status");
+
     public Page<Reservation> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
                                             int page, int size, String sortBy, String sortDir) {
-        org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase("asc") ?
-                org.springframework.data.domain.Sort.by(sortBy).ascending() :
-                org.springframework.data.domain.Sort.by(sortBy).descending();
+        // Sanitize sortBy against allowed fields to prevent injection attacks or 500 errors
+        String safeSortBy = ALLOWED_SORT_FIELDS.contains(sortBy) ? sortBy : "id";
+        // Sanitize sortDir to only allow 'asc' or 'desc'
+        String safeSortDir = (sortDir != null && sortDir.equalsIgnoreCase("desc")) ? "desc" : "asc";
+
+        org.springframework.data.domain.Sort sort = safeSortDir.equals("asc") ?
+                org.springframework.data.domain.Sort.by(safeSortBy).ascending() :
+                org.springframework.data.domain.Sort.by(safeSortBy).descending();
         Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
         return getReservations(status, minPrice, maxPrice, pageable);
     }
@@ -113,6 +121,13 @@ public class ReservationService {
 
         Resource resource = resourceRepository.findById(request.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + request.getResourceId()));
+
+        // Prevent double-booking: check for overlapping reservations for the same resource
+        boolean hasOverlap = reservationRepository.existsOverlappingReservation(
+                resource.getId(), request.getStartTime(), request.getEndTime());
+        if (hasOverlap) {
+            throw new BadRequestException("Resource is already booked for the requested time period");
+        }
 
         Reservation reservation = Reservation.builder()
                 .user(currentUser)

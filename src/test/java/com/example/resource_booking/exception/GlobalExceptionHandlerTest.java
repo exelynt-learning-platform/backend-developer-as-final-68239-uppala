@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.util.Map;
 
@@ -53,7 +54,19 @@ public class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         @SuppressWarnings("unchecked")
         Map<String, String> body = (Map<String, String>) response.getBody();
-        assertEquals("Access is denied", body.get("error"));
+        assertEquals("Access denied", body.get("error"));
+    }
+
+    @Test
+    void testHandleBadCredentialsException() {
+        BadCredentialsException ex = new BadCredentialsException("Bad credentials");
+        ResponseEntity<?> response = exceptionHandler.badCredentialsException(ex);
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertEquals("Invalid username or password", body.get("error"));
     }
 
     @Test
@@ -65,6 +78,7 @@ public class GlobalExceptionHandlerTest {
         assertNotNull(response.getBody());
         @SuppressWarnings("unchecked")
         Map<String, String> body = (Map<String, String>) response.getBody();
-        assertEquals("Unexpected error", body.get("error"));
+        assertEquals("An unexpected error occurred", body.get("error"));
     }
 }
+
