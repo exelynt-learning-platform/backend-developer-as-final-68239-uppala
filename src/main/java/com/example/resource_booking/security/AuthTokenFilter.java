@@ -57,8 +57,8 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                     return;
                 }
             } catch (Exception e) {
-                logger.error("Cannot set user authentication: {}", e.getMessage());
-                sendUnauthorizedError(response, "Authentication failed: " + e.getMessage());
+                logger.error("Cannot set user authentication: {}", e.getMessage(), e);
+                sendUnauthorizedError(response, "Invalid or expired JWT token");
                 return;
             }
         }

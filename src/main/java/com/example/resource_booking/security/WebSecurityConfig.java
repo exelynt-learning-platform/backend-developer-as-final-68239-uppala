@@ -54,8 +54,10 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // API requests use bearer tokens in the Authorization header and no cookie-based session.
+        // Keep CSRF protection enabled for every other route, including future browser/session endpoints.
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
-                        "/api/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html"))
+                        "/api/**"))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> 

@@ -44,7 +44,7 @@ public class JwtUtils {
                 throw invalidSecretFormatException();
             }
             return Keys.hmacShaKeyFor(secretBytes);
-        } catch (IllegalArgumentException ex) {
+        } catch (Exception ex) {
             throw invalidSecretFormatException();
         }
     }

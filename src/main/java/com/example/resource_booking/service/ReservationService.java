@@ -27,12 +27,21 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 @Service
 public class ReservationService {
+
+    public static final String FIELD_ID = "id";
+    public static final String FIELD_USER = "user";
+    public static final String FIELD_RESOURCE = "resource";
+    public static final String FIELD_START_TIME = "startTime";
+    public static final String FIELD_END_TIME = "endTime";
+    public static final String FIELD_STATUS = "status";
+    public static final String FIELD_PRICE = "price";
 
     /**
      * A reservation amount is stored as DECIMAL(10,2); retaining the same limit in
@@ -50,7 +59,7 @@ public class ReservationService {
      * Prevents runtime PropertyNotFoundException from internal/proxy properties.
      */
     private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "id", "startTime", "endTime", "status", "price"
+            FIELD_ID, FIELD_START_TIME, FIELD_END_TIME, FIELD_STATUS, FIELD_PRICE
     );
 
     public ReservationService(ReservationRepository reservationRepository,
@@ -124,16 +133,16 @@ public class ReservationService {
         List<Predicate> predicates = new ArrayList<>();
 
         if (!adminUser) {
-            predicates.add(criteriaBuilder.equal(root.get("user").get("id"), userDetails.getId()));
+            predicates.add(criteriaBuilder.equal(root.get(FIELD_USER).get(FIELD_ID), userDetails.getId()));
         }
         if (status != null) {
-            predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            predicates.add(criteriaBuilder.equal(root.get(FIELD_STATUS), status));
         }
         if (minPrice != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("price"), minPrice));
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(FIELD_PRICE), minPrice));
         }
         if (maxPrice != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("price"), maxPrice));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(FIELD_PRICE), maxPrice));
         }
 
         return predicates;
@@ -173,10 +182,7 @@ public class ReservationService {
     }
 
     public ReservationResponse createReservation(ReservationRequest request) {
-        if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().isEqual(request.getEndTime())) {
-            throw new BadRequestException("Start time must be before end time");
-        }
-        validateReservationPrice(request.getPrice());
+        validateReservationRequest(request);
 
         UserDetailsImpl userDetails = getCurrentUserDetails();
         User currentUser = userRepository.findById(userDetails.getId())
@@ -185,12 +191,7 @@ public class ReservationService {
         Resource resource = resourceRepository.findById(request.getResourceId())
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found with id: " + request.getResourceId()));
 
-        // Prevent double-booking: check for overlapping reservations for the same resource
-        boolean hasOverlap = reservationRepository.existsOverlappingReservation(
-                resource.getId(), request.getStartTime(), request.getEndTime());
-        if (hasOverlap) {
-            throw new BadRequestException("Resource is already booked for the requested time period");
-        }
+        ensureNoOverlappingReservation(resource.getId(), request.getStartTime(), request.getEndTime());
 
         Reservation reservation = Reservation.builder()
                 .user(currentUser)
@@ -202,6 +203,23 @@ public class ReservationService {
                 .build();
 
         return reservationMapper.toResponse(reservationRepository.save(reservation));
+    }
+
+    private void validateReservationRequest(ReservationRequest request) {
+        if (request.getStartTime() == null || request.getEndTime() == null) {
+            throw new BadRequestException("Start time and end time are required");
+        }
+        if (request.getStartTime().isAfter(request.getEndTime()) || request.getStartTime().isEqual(request.getEndTime())) {
+            throw new BadRequestException("Start time must be before end time");
+        }
+        validateReservationPrice(request.getPrice());
+    }
+
+    private void ensureNoOverlappingReservation(Long resourceId, LocalDateTime startTime, LocalDateTime endTime) {
+        boolean hasOverlap = reservationRepository.existsOverlappingReservation(resourceId, startTime, endTime);
+        if (hasOverlap) {
+            throw new BadRequestException("Resource is already booked for the requested time period");
+        }
     }
 
     public ReservationResponse updateReservationStatus(Long id, ReservationStatus status) {

@@ -63,7 +63,7 @@ public class JwtUtilsTest {
     @Test
     void plainTextSecret_ThrowsClearConfigurationError() {
         JwtUtils plainUtils = new JwtUtils();
-        ReflectionTestUtils.setField(plainUtils, "jwtSecret", "mySimplePlainTextSecretKeyForTestingThatIsLongEnough");
+        ReflectionTestUtils.setField(plainUtils, "jwtSecret", "not_valid_base64_secret_key_with_invalid_chars!@#$%^&*()");
         ReflectionTestUtils.setField(plainUtils, "jwtExpirationMs", expirationMs);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, plainUtils::init);

@@ -87,7 +87,7 @@ public class ReservationServiceTest {
                 .price(new BigDecimal("100.00"))
                 .build();
 
-        when(reservationMapper.toResponse(any(Reservation.class)))
+        lenient().when(reservationMapper.toResponse(any(Reservation.class)))
                 .thenAnswer(invocation -> new ReservationResponse(invocation.getArgument(0)));
     }
 
@@ -99,10 +99,10 @@ public class ReservationServiceTest {
     private void mockSecurityContext(User user) {
         UserDetailsImpl userDetails = UserDetailsImpl.build(user);
         Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
+        lenient().when(authentication.getPrincipal()).thenReturn(userDetails);
 
         SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
     }
 
