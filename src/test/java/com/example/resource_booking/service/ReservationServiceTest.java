@@ -19,8 +19,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -28,6 +34,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -210,6 +217,49 @@ public class ReservationServiceTest {
 
         assertThrows(BadRequestException.class, () -> reservationService.getReservations(
                 null, null, null, 0, 10, "unknownField", "asc"));
+        verifyNoInteractions(reservationRepository);
+    }
+
+    @Test
+    void getReservations_AppliesStatusAndPriceFilters() {
+        mockSecurityContext(testUser);
+        when(reservationRepository.findAll(ArgumentMatchers.<Specification<Reservation>>any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(testReservation)));
+
+        Page<ReservationResponse> result = reservationService.getReservations(
+                ReservationStatus.PENDING, new BigDecimal("50.00"), new BigDecimal("150.00"),
+                0, 10, "price", "asc");
+
+        assertEquals(1, result.getTotalElements());
+        assertEquals(ReservationStatus.PENDING, result.getContent().get(0).getStatus());
+        verify(reservationRepository).findAll(
+                ArgumentMatchers.<Specification<Reservation>>any(), any(Pageable.class));
+    }
+
+    @Test
+    void getReservations_AppliesPaginationAndSorting() {
+        mockSecurityContext(testUser);
+        when(reservationRepository.findAll(ArgumentMatchers.<Specification<Reservation>>any(), any(Pageable.class)))
+                .thenReturn(Page.empty());
+
+        reservationService.getReservations(null, null, null, 2, 5, "startTime", "desc");
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(reservationRepository).findAll(
+                ArgumentMatchers.<Specification<Reservation>>any(), pageableCaptor.capture());
+        Pageable pageable = pageableCaptor.getValue();
+        assertEquals(2, pageable.getPageNumber());
+        assertEquals(5, pageable.getPageSize());
+        assertEquals(org.springframework.data.domain.Sort.Direction.DESC,
+                pageable.getSort().getOrderFor("startTime").getDirection());
+    }
+
+    @Test
+    void getReservations_WithInvalidPage_ThrowsBadRequestException() {
+        mockSecurityContext(testUser);
+
+        assertThrows(BadRequestException.class, () -> reservationService.getReservations(
+                null, null, null, -1, 10, "id", "asc"));
         verifyNoInteractions(reservationRepository);
     }
 

@@ -80,5 +80,16 @@ public class GlobalExceptionHandlerTest {
         Map<String, String> body = (Map<String, String>) response.getBody();
         assertEquals("An unexpected error occurred", body.get("error"));
     }
-}
 
+    @Test
+    void testHandleIllegalArgumentException() {
+        IllegalArgumentException exception = new IllegalArgumentException("Invalid page");
+
+        ResponseEntity<?> response = exceptionHandler.illegalArgumentException(exception);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        @SuppressWarnings("unchecked")
+        Map<String, String> body = (Map<String, String>) response.getBody();
+        assertEquals("Invalid request parameter", body.get("error"));
+    }
+}

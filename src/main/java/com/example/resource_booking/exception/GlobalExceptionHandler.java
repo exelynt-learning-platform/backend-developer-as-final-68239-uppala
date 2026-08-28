@@ -65,6 +65,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> illegalArgumentException(IllegalArgumentException ex) {
+        logger.warn("Invalid request argument: {}", ex.getMessage());
+        Map<String, String> response = new HashMap<>();
+        response.put("error", "Invalid request parameter");
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> globalExceptionHandler(Exception ex) {
         logger.error("Unhandled exception: {}", ex.getMessage(), ex);

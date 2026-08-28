@@ -3,11 +3,9 @@ package com.example.resource_booking.controller;
 import com.example.resource_booking.dto.JwtResponse;
 import com.example.resource_booking.dto.LoginRequest;
 import com.example.resource_booking.security.JwtUtils;
-import com.example.resource_booking.security.services.UserDetailsImpl;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -34,10 +32,6 @@ public class AuthController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
         
-        if (!(authentication.getPrincipal() instanceof UserDetailsImpl userDetails)) {
-            throw new AuthenticationServiceException("Unsupported authenticated principal");
-        }
-
         return ResponseEntity.ok(new JwtResponse(jwt));
     }
 }
