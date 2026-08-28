@@ -122,11 +122,24 @@ public class ReservationService {
 
     public Page<ReservationResponse> getReservations(ReservationStatus status, BigDecimal minPrice, BigDecimal maxPrice,
                                                      int page, int size, String sortBy, String sortDir) {
+        validateSearchParameters(minPrice, maxPrice, page, size);
         Pageable pageable = createPageable(page, size, sortBy, sortDir);
         UserDetailsImpl userDetails = getCurrentUserDetails();
         Specification<Reservation> spec = buildSpecification(userDetails, isAdmin(userDetails), status, minPrice, maxPrice);
 
         return reservationRepository.findAll(spec, pageable).map(ReservationResponse::new);
+    }
+
+    private void validateSearchParameters(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
+        if (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) > 0) {
+            throw new BadRequestException("Minimum price must not exceed maximum price");
+        }
+        if (page < 0) {
+            throw new BadRequestException("Page number must not be negative");
+        }
+        if (size < 1 || size > 100) {
+            throw new BadRequestException("Page size must be between 1 and 100");
+        }
     }
 
     public ReservationResponse getReservationById(Long id) {

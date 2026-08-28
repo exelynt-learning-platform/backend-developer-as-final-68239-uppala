@@ -29,13 +29,13 @@ The application can be configured via environment variables or local configurati
 | Variable | Description | Default / Example |
 |---|---|---|
 | `DB_URL` | JDBC Database Connection URL | `jdbc:mysql://localhost:3306/booking_db?createDatabaseIfNotExist=true` |
-| `DB_USERNAME` | Database username | `root` |
-| `DB_PASSWORD` | Database password | *(Set securely via ENV)* |
+| `DB_USERNAME` | Database username | *(Required; set securely via ENV)* |
+| `DB_PASSWORD` | Database password | *(Required; set securely via ENV)* |
 | `JWT_SECRET` | 256-bit Hex secret key for signing JWTs | *(Set securely via ENV)* |
 | `JWT_EXPIRATION_MS`| JWT validity duration in milliseconds | `86400000` (24 Hours) |
 | `SERVER_PORT` | Application server port | `8081` |
-| `ADMIN_SEED_PASSWORD` | Initial password for the admin seed account | *(Configurable via ENV)* |
-| `USER_SEED_PASSWORD` | Initial password for the standard user seed account | *(Configurable via ENV)* |
+| `ADMIN_SEED_PASSWORD` | Initial password for the admin seed account | *(Required; set securely via ENV)* |
+| `USER_SEED_PASSWORD` | Initial password for the standard user seed account | *(Required; set securely via ENV)* |
 
 ## API endpoints
 
@@ -57,14 +57,30 @@ All endpoints other than login require a Bearer token. `USER` accounts can read 
 
 ## Setup & Running Locally
 
-### 1. Database Setup
+### 1. Configure Environment Variables
+Set the required environment variables before starting the application:
+
+```bash
+# Database Credentials
+export DB_USERNAME=root
+export DB_PASSWORD=your_database_password
+
+# JWT Secret (minimum 32 bytes / 256 bits)
+export JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+# Initial Seed Credentials
+export ADMIN_SEED_PASSWORD=admin123
+export USER_SEED_PASSWORD=user123
+```
+
+### 2. Database Setup
 Create the database schema in your local MySQL or PostgreSQL instance:
 
 ```sql
 CREATE DATABASE booking_db;
 ```
 
-### 2. Build and Run
+### 3. Build and Run
 Run the application using the Maven wrapper:
 
 ```bash

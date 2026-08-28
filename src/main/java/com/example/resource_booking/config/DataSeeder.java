@@ -22,8 +22,8 @@ public class DataSeeder implements CommandLineRunner {
     public DataSeeder(UserRepository userRepository,
                       ResourceRepository resourceRepository,
                       PasswordEncoder passwordEncoder,
-                      @Value("${app.seed.admin-password:admin123}") String adminPassword,
-                      @Value("${app.seed.user-password:user123}") String userPassword) {
+                      @Value("${app.seed.admin-password}") String adminPassword,
+                      @Value("${app.seed.user-password}") String userPassword) {
         this.userRepository = userRepository;
         this.resourceRepository = resourceRepository;
         this.passwordEncoder = passwordEncoder;

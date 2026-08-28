@@ -17,7 +17,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = "jwt.secret=01234567890123456789012345678901"
+        properties = {
+                "jwt.secret=01234567890123456789012345678901",
+                "app.seed.admin-password=test-admin-password",
+                "app.seed.user-password=user123"
+        }
 )
 public class SecurityIntegrationTest {
 

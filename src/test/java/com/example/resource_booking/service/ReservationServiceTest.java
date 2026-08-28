@@ -85,10 +85,10 @@ public class ReservationServiceTest {
     private void mockSecurityContext(User user) {
         UserDetailsImpl userDetails = UserDetailsImpl.build(user);
         Authentication authentication = mock(Authentication.class);
-        when(authentication.getPrincipal()).thenReturn(userDetails);
+        lenient().when(authentication.getPrincipal()).thenReturn(userDetails);
 
         SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
     }
 
@@ -183,6 +183,16 @@ public class ReservationServiceTest {
         request.setEndTime(LocalDateTime.now().plusDays(2));
 
         assertThrows(BadRequestException.class, () -> reservationService.createReservation(request));
+    }
+
+    @Test
+    void getReservations_WithMinimumPriceAboveMaximumPrice_ThrowsBadRequestException() {
+        mockSecurityContext(testUser);
+
+        assertThrows(BadRequestException.class, () -> reservationService.getReservations(
+                null, new BigDecimal("200.00"), new BigDecimal("100.00"),
+                0, 10, "id", "asc"));
+        verifyNoInteractions(reservationRepository);
     }
 
     @Test
